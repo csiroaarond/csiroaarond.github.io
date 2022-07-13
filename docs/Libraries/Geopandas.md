@@ -83,3 +83,57 @@ results.to_csv(output_path)
 print('Successfully written output file at {}'.format(output_path))
 ```
 
+
+
+### Creating Spatial Data
+
+[GeoNames Dataset](https://www.geonames.org/export/)
+ 
+Read in data with column name assignment
+```
+column_names = [
+    'geonameid', 'name', 'asciiname', 'alternatenames', 
+    'latitude', 'longitude', 'feature class', 'feature code',
+    'country code', 'cc2', 'admin1 code', 'admin2 code',
+    'admin3 code', 'admin4 code', 'population', 'elevation',
+    'dem', 'timezone', 'modification date'
+]
+
+df = pd.read_csv(path, sep='\t', names=column_names)
+```
+
+Get subset of data containing only  mountains by filtering 'feature class' equal to 'T'
+```
+mountains = df[df['feature class']=='T']
+print(mountains.head()[['name', 'latitude', 'longitude', 'dem','feature class']])
+```
+
+Result:
+```
+                 name  latitude  longitude   dem feature class
+15       Vulcan Point  52.10222  177.53889 -9999             T
+16     Tropical Ridge  51.99167  177.50833   267             T
+17  Thirty-Seven Hill  52.84528  173.15278   193             T
+20       Square Point  52.86120  173.33679    30             T
+21       Square Bluff  51.65000  178.70000 -9999             T
+```
+
+Create the geometry column from the x and y coordinates (longitude and latitude). Then convert the DataFrame into a GeoDataFrame, specifying the CRS (projection) and the new geometry column.
+
+```
+geometry = gpd.points_from_xy(mountains.longitude, mountains.latitude)
+gdf = gpd.GeoDataFrame(mountains, crs='EPSG:4326', geometry=geometry)
+```
+
+Export geodataframe into gpkg file.
+
+```
+output_dir = 'output'
+output_filename = 'mountains.gpkg'
+output_path = os.path.join(output_dir, output_filename)
+
+gdf.to_file(driver='GPKG', filename=output_path, encoding='utf-8')
+print('Successfully written output file at {}'.format(output_path))
+```
+
+This gpkg file can be viewed as a layer in qgis.
